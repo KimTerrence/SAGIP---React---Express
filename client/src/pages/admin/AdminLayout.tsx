@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Menu, X, Users, Settings, LayoutDashboard, 
@@ -15,28 +15,7 @@ export default function AdminLayout() {
 
 
  // ✅ Check token on load
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      navigate("/login");
-    } else {
-      // optional: verify token with backend
-      fetch("http://localhost:5000/dashboard", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => {
-          if (res.status === 401 || res.status === 403) {
-            localStorage.removeItem("authToken");
-            navigate("/login");
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem("authToken");
-          navigate("/login");
-        });
-    }
-  }, [navigate]);
-
+ 
   // ✅ Logout
   const handleLogout = () => {
     localStorage.removeItem("authToken");
