@@ -14,9 +14,7 @@ export default function AdminLayout() {
 
 
 
- // ✅ Check token on load
- 
-  // ✅ Logout
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     navigate("/");
@@ -59,9 +57,9 @@ export default function AdminLayout() {
         {/* Nav */}
         <nav className="flex-1 flex flex-col p-4">
           <NavItem to="/admin" label="Dashboard" icon={<LayoutDashboard size={20} />} active={location.pathname === "/admin"} sidebarMin={sidebarMin} />
+          <NavItem to="/admin/pest" label="Pests" icon={<Bug size={20} />} active={location.pathname === "/admin/pest"} sidebarMin={sidebarMin} />
+          <NavItem to="/admin/data" label="Data Sets" icon={<Database size={20} />} active={location.pathname === "/admin/data"} sidebarMin={sidebarMin} />
           <NavItem to="/admin/users" label="Users" icon={<Users size={20} />} active={location.pathname === "/admin/users"} sidebarMin={sidebarMin} />
-          <NavItem to="/admin/pest" label="Pests" icon={<Bug size={20} />} active={location.pathname === "/admin/users"} sidebarMin={sidebarMin} />
-          <NavItem to="/admin/data" label="Data Sets" icon={<Database size={20} />} active={location.pathname === "/admin/users"} sidebarMin={sidebarMin} />
           <NavItem to="/admin/settings" label="Settings" icon={<Settings size={20} />} active={location.pathname === "/admin/settings"} sidebarMin={sidebarMin} />
 
           {/* Logout at bottom */}
