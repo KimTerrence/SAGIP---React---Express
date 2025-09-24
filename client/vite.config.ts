@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 const allowedHosts = [
   'localhost',
   '127.0.0.1',
-  'basis-nick-world-projector.trycloudflare.com'  // 👈 add this
+  'basis-nick-world-projector.trycloudflare.com'  // <--- domain
 ]
 
 // https://vite.dev/config/
