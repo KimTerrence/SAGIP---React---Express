@@ -1,138 +1,145 @@
-import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Pencil, Plus } from "lucide-react";
 import EditPestModal from "../../components/EditPestModal";
+import PestModal from "../../components/PestModal";
 import { useOutletContext } from "react-router-dom";
+import AddPestModal from "../../components/AddPestModal";
+import API_BASE_URL from "../../config";
 
 type ContextType = { search: string; filter: string; view: "card" | "list" };
 
-const initialPests = [
-  { id: 1, name: "Brown Planthopper", host: "Corn", description: "Sap-sucking insect causing hopper burn.", image: "/pest/palay/greenleafhopper.jpg" },
-  { id: 2, name: "Rice Blast", host: "Corn", description: "Fungal disease causing lesions on leaves.", image: "/pest/palay/greenleafhopper.jpg" },
-  { id: 3, name: "Armyworm", host: "Corn", description: "Caterpillar that feeds on rice leaves.", image: "/pest/palay/greenleafhopper.jpg" },
-  { id: 5, name: "Weeds", host: "Palay", description: "Competes with rice plants for nutrients. Competes with rice plants for nutrients Competes with rice plants for nutrientsCompetes with rice plants for nutrientsCompetes with rice plants for nutrientsCompetes with rice plants for nutrientsCompetes with rice plants for nutrientsCompetes with rice plants for nutrients", image: "/pest/palay/greenleafhopper.jpg" },
-  { id: 6, name: "Armyworm", host: "Corn", description: "Caterpillar that feeds on rice leaves.", image: "/pest/palay/greenleafhopper.jpg" },
-  { id: 7, name: "Armyworm", host: "Corn", description: "Caterpillar that feeds on rice leaves.", image: "/pest/palay/greenleafhopper.jpg" },
-  { id: 8, name: "Armyworm", host: "Corn", description: "Caterpillar that feeds on rice leaves.", image: "/pest/palay/greenleafhopper.jpg" },
-];
+interface ControlMethods {
+  Cultural: string[];
+  Biological: string[];
+  Chemical: string[];
+}
+
+interface Pest {
+  idPest: number;
+  pestImg: string;
+  pestName: string;
+  tagalogName: string;
+  identifyingMarks: string;
+  whereToFind: string;
+  damage: string;
+  lifeCycle: string;
+  lifeCycleImg: string;
+  controlMethods?: ControlMethods;
+}
 
 export default function AdminPest() {
   const { search, filter, view } = useOutletContext<ContextType>();
-  const [pests, setPests] = useState(initialPests);
+  const [pests, setPests] = useState<Pest[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Edit modal state
-  const [editingPest, setEditingPest] = useState<any>(null);
-  const [form, setForm] = useState({ id: 0, name: "", host: "", description: "", image: "" });
+  // Modals
+  const [editingPest, setEditingPest] = useState<number | null>(null);
+  const [form, setForm] = useState<Pest | null>(null);
+  const [selectedPest, setSelectedPest] = useState<Pest | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  // Fetch pests with control methods
+ const fetchPests = async () => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/pests`);
+    const data: Pest[] = await res.json();
+
+    // No need to fetch control methods separately
+    setPests(data);
+  } catch (err) {
+    console.error("Error fetching pests:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  useEffect(() => {
+    fetchPests();
+  }, []);
 
   const filteredPests = pests.filter((pest) => {
-    const matchesSearch = pest.name.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "All" || pest.host === filter;
+    const matchesSearch = pest.pestName.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === "All" || pest.whereToFind === filter;
     return matchesSearch && matchesFilter;
   });
 
-  // Open edit form
-  const handleEdit = (pest: any) => {
-    setForm(pest);
-    setEditingPest(pest.id);
-  };
-
-  // Save edited pest
-  const handleSave = () => {
-    setPests((prev) =>
-      prev.map((p) => (p.id === form.id ? { ...form } : p))
-    );
-    setEditingPest(null);
-  };
-
-  // Delete pest
-  const handleDelete = (id: number) => {
-    setPests((prev) => prev.filter((p) => p.id !== id));
-    setEditingPest(null);
-  };
+  if (loading) return <p>Loading pests...</p>;
 
   return (
-    <div>
-     
-
-      {/* Pest Display */}
+    <div className="space-y-6">
       {filteredPests.length > 0 ? (
-        view === "card" ? (
-          // Card View
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {filteredPests.map((pest) => (
-              <div key={pest.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative">
-                <img src={pest.image} alt={pest.name} className="w-full h-40 object-cover" />
-                <div className="p-4">
-                  <h2 className="text-lg font-semibold">{pest.name}</h2>
-                  <p className="text-sm text-gray-500">{pest.host}</p>
-                  <p className="mt-2 text-gray-600">
-                    {pest.description.length > 80
-                      ? pest.description.substring(0, 80) + "..."
-                      : pest.description}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleEdit(pest)}
-                  className="absolute top-2 right-2 bg-green-600 text-white p-2 rounded-full shadow hover:bg-green-700"
-                >
-                  <Pencil size={16} />
-                </button>
+        <div className={view === "card" ? "grid grid-cols-1 md:grid-cols-3 gap-6" : ""}>
+          {filteredPests.map((pest) => (
+            <div
+              key={pest.idPest}
+              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative cursor-pointer"
+              onClick={() => setSelectedPest(pest)}
+            >
+              <img
+                src={`${API_BASE_URL}${pest.pestImg}`}
+                alt={pest.pestName}
+                className="w-full h-40 object-cover"
+              />
+
+              <div className="p-4">
+                <h2 className="text-lg font-semibold">{pest.pestName}</h2>
+                <p className="text-sm text-gray-500">{pest.tagalogName}</p>
+                <p className="mt-2 text-gray-600">
+                  {pest.identifyingMarks.length > 80
+                    ? pest.identifyingMarks.substring(0, 80) + "..."
+                    : pest.identifyingMarks}
+                </p>
               </div>
-            ))}
-          </div>
-        ) : (
-          // List View
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <table className="w-full border-collapse">
-              <thead className="bg-green-600 text-white">
-                <tr>
-                  <th className="p-3 text-left hidden md:flex">Image</th>
-                  <th className="p-3 text-left">Name</th>
-                  <th className="p-3 text-left">Host</th>
-                  <th className="p-3 text-left hidden md:flex">Description</th>
-                  <th className="p-3 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPests.map((pest) => (
-                  <tr key={pest.id} className="border-t hover:bg-gray-50">
-                    <td className="p-3 hidden md:flex">
-                      <img src={pest.image} alt={pest.name} className="h-12 w-12 object-cover rounded" />
-                    </td>
-                    <td className="p-3 font-semibold">{pest.name}</td>
-                    <td className="p-3">{pest.host}</td>
-                    <td className="p-3 text-gray-600 hidden md:flex">
-                      {pest.description.length > 100
-                        ? pest.description.substring(0, 100) + "..."
-                        : pest.description}
-                    </td>
-                    <td className="p-3">
-                      <button
-                        onClick={() => handleEdit(pest)}
-                        className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
-                      >
-                        <Pencil size={14} /> Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setForm(pest);
+                  setEditingPest(pest.idPest);
+                }}
+                className="absolute top-2 right-2 bg-green-600 text-white p-2 rounded-full shadow hover:bg-green-700"
+              >
+                <Pencil size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
       ) : (
         <p className="text-gray-500">No pests found.</p>
       )}
 
+      {/* View Modal */}
+      {selectedPest && (
+        <PestModal
+          pest={{
+            ...selectedPest,
+            pestImg: selectedPest.pestImg ? `${API_BASE_URL}${selectedPest.pestImg}` : "",
+            lifeCycleImg: selectedPest.lifeCycleImg ? `${API_BASE_URL}${selectedPest.lifeCycleImg}` : "",
+          }}
+          onClose={() => setSelectedPest(null)}
+        />
+      )}
+
       {/* Edit Modal */}
-      {editingPest && (
+      {editingPest && form && (
         <EditPestModal
           form={form}
           setForm={setForm}
           onClose={() => setEditingPest(null)}
-          onSave={handleSave}
-          onDelete={handleDelete}
+          onSave={() => fetchPests()}
+          onDelete={() => fetchPests()}
         />
       )}
+
+      {/* Add Pest Button */}
+      <button
+        onClick={() => setAdding(true)}
+        className="fixed bottom-4 right-4 px-4 py-4 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition"
+      >
+        <Plus size={24} />
+      </button>
+
+      {adding && <AddPestModal onClose={() => setAdding(false)} onAdded={fetchPests} />}
     </div>
   );
 }
