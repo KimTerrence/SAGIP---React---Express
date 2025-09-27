@@ -11,7 +11,7 @@ router.post("/login", async (req, res) => {
 
   try {
     
-    // ✅ Find user in DB
+    //  Find user in DB
     const [rows]: any = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
@@ -22,13 +22,13 @@ router.post("/login", async (req, res) => {
 
     const user = rows[0];
 
-    // ✅ Compare password
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // ✅ Generate JWT
+    // Generate JWT
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET || "secret",
