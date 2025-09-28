@@ -304,7 +304,7 @@ export default function AddPestModal({ onClose, onAdded }: AddPestModalProps) {
                       className="hidden"
                       accept="image/*"
                       onChange={(e) => setLifeCycleImg(e.target.files?.[0] || null)}
-                    />
+                    /> 
                   </label>
                 )}
               </div>
