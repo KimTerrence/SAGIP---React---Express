@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 const allowedHosts = [
   'localhost',
   '127.0.0.1',
-  'basis-nick-world-projector.trycloudflare.com'  // <--- domain
+   // <--- domain
 ]
 
 // https://vite.dev/config/
@@ -15,17 +15,5 @@ export default defineConfig({
   server: {
      host: true, // allow access from network
     allowedHosts,
-   proxy: {
-      "/auth/login": {
-        target: "http://localhost:5000", // your Express server
-        changeOrigin: true,
-        secure: false,
-      },
-      "/user": {
-        target: "http://localhost:5000", // your Express server
-        changeOrigin: true,
-        secure: false,
-      },
-    },
   },
 })
