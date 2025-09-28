@@ -69,7 +69,7 @@ router.post(
   ]),
   async (req, res) => {
     try {
-      const { pestName, tagalogName, identifyingMarks, whereToFind, damage, lifeCycle, controlMethods } = req.body;
+      const { pestName, tagalogName, identifyingMarks, whereToFind, damage, lifeCycle, controlMethods, host } = req.body;
       const controlMethodsObj = parseControlMethods(controlMethods);
 
       const pestImgPath =
@@ -82,9 +82,9 @@ router.post(
           : "";
 
       const [result] = await db.query(
-        `INSERT INTO pest (pestName, tagalogName, pestImg, identifyingMarks, whereToFind, damage, lifeCycle, lifeCycleImg)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [pestName, tagalogName, pestImgPath, identifyingMarks, whereToFind, damage, lifeCycle, lifeCycleImgPath]
+        `INSERT INTO pest (pestName, tagalogName, pestImg, identifyingMarks, whereToFind, damage, lifeCycle, lifeCycleImg, host)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [pestName, tagalogName, pestImgPath, identifyingMarks, whereToFind, damage, lifeCycle, lifeCycleImgPath, host]
       );
       const pestId = (result as any).insertId;
 
@@ -119,7 +119,7 @@ router.put(
 
     try {
       const { id } = req.params;
-      const { pestName, tagalogName, identifyingMarks, whereToFind, damage, lifeCycle, controlMethods } = req.body;
+      const { pestName, tagalogName, identifyingMarks, whereToFind, damage, lifeCycle, controlMethods, host } = req.body;
       const controlMethodsObj = parseControlMethods(controlMethods);
 
       const pestImgPath =
@@ -138,8 +138,9 @@ router.put(
         "whereToFind = ?",
         "damage = ?",
         "lifeCycle = ?",
+        "host = ?"
       ];
-      const values: any[] = [pestName, tagalogName, identifyingMarks, whereToFind, damage, lifeCycle];
+      const values: any[] = [pestName, tagalogName, identifyingMarks, whereToFind, damage, lifeCycle, host];
 
       if (pestImgPath) {
         fields.push("pestImg = ?");
@@ -178,5 +179,49 @@ router.put(
     }
   }
 );
+
+// DELETE pest by ID
+router.delete("/:id", async (req, res) => {
+  const connection = await db.getConnection();
+  await connection.beginTransaction();
+
+  try {
+    const { id } = req.params;
+
+    // 1. Delete control methods first (foreign key dependency)
+    await connection.query(`DELETE FROM controlmethod WHERE idPest = ?`, [id]);
+
+    // 2. Delete the pest
+    const [result] = await connection.query(`DELETE FROM pest WHERE idPest = ?`, [id]);
+
+    await connection.commit();
+    connection.release();
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({ message: "Pest not found" });
+    }
+
+    res.json({ message: "Pest deleted successfully" });
+  } catch (err) {
+    await connection.rollback();
+    connection.release();
+    console.error("❌ Failed to delete pest:", err);
+    res.status(500).json({ message: "Failed to delete pest" });
+  }
+});
+
+
+
+router.get("/hosts", async (req, res) => {
+  try {
+    const [rows] = await db.query(`SELECT DISTINCT host FROM pest WHERE host IS NOT NULL AND host != ''`);
+    const hosts = (rows as any).map((row: any) => row.host);
+    res.json(hosts);
+  } catch (err) {
+    console.error("Failed to fetch hosts:", err);
+    res.status(500).json({ message: "Failed to fetch hosts" });
+  }
+});
+
 
 export default router;
