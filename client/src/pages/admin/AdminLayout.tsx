@@ -3,7 +3,6 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu, X, Users, Settings, LayoutDashboard,
   ChevronLeft, ChevronRight, LogOut, Bug, Database,
-  LayoutGrid, List,
 } from "lucide-react";
 import PestHeader from "../../components/PestHeader";
 

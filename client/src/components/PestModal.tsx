@@ -1,6 +1,7 @@
 import { X, Info, Leaf, Bug, Skull } from "lucide-react";
 import { useEffect } from "react";
-import API_BASE_URL from "../config";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface ControlMethods {
   Cultural: string[];
@@ -52,11 +53,7 @@ export default function PestModal({ pest, onClose }: PestModalProps) {
           {pest.pestImg && (
             <div className="relative w-full h-80 rounded-3xl overflow-hidden shadow-md border border-gray-200">
               <img
-                src={
-                  pest.pestImg.startsWith("http")
-                    ? pest.pestImg
-                    : `${API_BASE_URL}${pest.pestImg}`
-                }
+                  src={`${API_BASE_URL}${pest.pestImg}`}            
                 alt={pest.pestName}
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -110,11 +107,7 @@ export default function PestModal({ pest, onClose }: PestModalProps) {
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 {pest.lifeCycleImg && (
                   <img
-                    src={
-                      pest.lifeCycleImg.startsWith("http")
-                        ? pest.lifeCycleImg
-                        : `${API_BASE_URL}${pest.lifeCycleImg}`
-                    }
+                    src={`${API_BASE_URL}${pest.lifeCycleImg}`}                    
                     alt={`${pest.pestName} Life Cycle`}
                     className="h-full md:w-1/2 h-52 object-cover rounded-3xl border border-yellow-300 shadow-sm"
                     loading="lazy"

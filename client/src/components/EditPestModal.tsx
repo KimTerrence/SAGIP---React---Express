@@ -1,7 +1,8 @@
-import { useState } from "react";
-import API_BASE_URL from "../config";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { Plus, X, Trash2, Save, Upload } from "lucide-react";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface ControlMethods {
   Cultural: string[];
@@ -14,6 +15,7 @@ interface EditPestModalProps {
     idPest: number;
     pestName: string;
     tagalogName: string;
+    host: string;
     identifyingMarks: string;
     whereToFind: string;
     damage: string;
@@ -37,6 +39,8 @@ export default function EditPestModal({
 }: EditPestModalProps) {
   const [pestImg, setPestImg] = useState<File | null>(null);
   const [lifeCycleImg, setLifeCycleImg] = useState<File | null>(null);
+  const [hosts, setHosts] = useState<string[]>([]); // fetched hosts
+  const [isCustomHost, setIsCustomHost] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -83,6 +87,7 @@ export default function EditPestModal({
     Object.entries({
       pestName: form.pestName,
       tagalogName: form.tagalogName,
+      host: form.host,
       identifyingMarks: form.identifyingMarks,
       whereToFind: form.whereToFind,
       damage: form.damage,
@@ -114,6 +119,29 @@ export default function EditPestModal({
     }
   };
 
+  useEffect(() => {
+  const fetchHosts = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/pests/hosts`); // your API endpoint
+      setHosts(res.data); // assume res.data is string[]
+    } catch (err) {
+      console.error("❌ Failed to fetch hosts:", err);
+    }
+  };
+  fetchHosts();
+}, []);
+
+// Handle host change
+const handleHostChange = (value: string) => {
+  if (value === "Other") {
+    setIsCustomHost(true);
+    setForm({ ...form, host: "" });
+  } else {
+    setIsCustomHost(false);
+    setForm({ ...form, host: value });
+  }
+};
+
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-[9999] px-4 h-full">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative animate-slideUp border border-gray-200">
@@ -139,7 +167,7 @@ export default function EditPestModal({
   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
     {/* Pest Image */}
     <div className="flex flex-col items-center space-y-4">
-      <h3 className="text-xl font-bold text-gray-800 w-full">Pest Image</h3>
+      <h3 className="text-xl font-bold text-gray-800 w-full">Basic Info</h3>
       {pestImg || form.pestImg ? (
         <div className="relative h-full rounded-2xl overflow-hidden shadow-md border border-gray-300">
           <img
@@ -187,8 +215,7 @@ export default function EditPestModal({
 
     {/* Basic Info */}
     <div className="space-y-6">
-      <h3 className="text-xl font-bold text-gray-800">Basic Info</h3>
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-5">
         {[
           { name: "pestName", label: "Pest Name", required: true },
           { name: "tagalogName", label: "Tagalog Name", required: false },
@@ -212,12 +239,43 @@ export default function EditPestModal({
             />
           </div>
         ))}
+
+              {/* Host Dropdown */}
+<div className="flex flex-col">
+  <label htmlFor="host" className="mb-2 font-medium text-gray-700">
+    Host
+  </label>
+  <select
+    id="host"
+    value={isCustomHost ? "Other" : (form as any).host || ""}
+    onChange={(e) => handleHostChange(e.target.value)}
+    className="p-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition"
+    required
+  >
+    <option value="">-- Select Host --</option>
+    {hosts.map((h) => (
+      <option key={h} value={h}>
+        {h}
+      </option>
+    ))}
+    <option value="Other">Other</option>
+  </select>
+
+  {isCustomHost && (
+    <input
+      type="text"
+      value={(form as any).host}
+      onChange={(e) => setForm({ ...form, host: e.target.value })}
+      placeholder="Enter custom host"
+      className="mt-3 p-3 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none transition"
+      required
+    />
+  )}
+</div>
       </div>
     </div>
   </div>
 </section>
-
-
           {/* Details */}
           <section className="bg-gray-50 p-6 rounded-2xl border border-gray-200 space-y-6 shadow-sm">
             <h3 className="text-xl font-bold text-gray-800">Details</h3>
@@ -240,7 +298,7 @@ export default function EditPestModal({
                   onChange={handleChange}
                   rows={field.rows}
                   placeholder={`Enter ${field.label.toLowerCase()}`}
-                  className="p-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent resize-none transition"
+                  className="p-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition"
                 />
               </div>
             ))}
@@ -307,13 +365,13 @@ export default function EditPestModal({
         onChange={handleChange}
         rows={6}
         placeholder="Enter life cycle details"
-        className="p-3 h-full rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none focus:border-transparent  transition mt-4"
+        className="p-3 h-full rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent  transition mt-4"
       />
     </div>
   </div>
 </section>
 
-
+ 
           {/* Control Methods */}
           <section className="bg-gray-50 p-6 rounded-2xl border border-gray-200 space-y-6 shadow-sm">
             <h3 className="text-xl font-bold text-gray-800">Control Methods</h3>
@@ -357,31 +415,44 @@ export default function EditPestModal({
             )}
           </section>
 
-          {/* Footer */}
-          <footer className="flex flex-col md:flex-row justify-between gap-4 bottom-0 bg-white/90 backdrop-blur border-t border-gray-200 px-8 py-4 shadow-inner">
-            <button
-              type="button"
-              onClick={() => onDelete(form.idPest)}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-red-600 text-white shadow hover:bg-red-700 transition"
-            >
-              <Trash2 size={18} /> Delete
-            </button>
-            <div className="flex gap-4 justify-end flex-grow">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-gray-300 hover:bg-gray-100 transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-green-600 text-white shadow hover:bg-green-700 transition"
-              >
-                <Save size={18} /> Save
-              </button>
-            </div>
-          </footer>
+<footer className="flex flex-col md:flex-row justify-between gap-4 bottom-0 bg-white/90 backdrop-blur border-t border-gray-200 px-8 py-4 shadow-inner">
+<button
+  type="button"
+  onClick={async () => {
+    if (!confirm("Are you sure you want to delete this pest?")) return;
+    try {
+      await axios.delete(`${API_BASE_URL}/pests/${form.idPest}`);
+      alert("✅ Pest deleted successfully");
+      onDelete(form.idPest); // notify parent to refresh the list
+      onClose(); // close modal
+    } catch (err) {
+      console.error(err);
+      alert("❌ Failed to delete pest");
+    }
+  }}
+  className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-red-600 text-white shadow hover:bg-red-700 transition"
+>
+  <Trash2 size={18} /> Delete
+</button>
+
+
+  <div className="flex gap-4 justify-end flex-grow">
+    <button
+      type="button"
+      onClick={onClose}
+      className="flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-gray-300 hover:bg-gray-100 transition"
+    >
+      Cancel
+    </button>
+    <button
+      type="submit"
+      className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-green-600 text-white shadow hover:bg-green-700 transition"
+    >
+      <Save size={18} /> Save
+    </button>
+  </div>
+</footer>
+
         </form>
       </div>
     </div>
