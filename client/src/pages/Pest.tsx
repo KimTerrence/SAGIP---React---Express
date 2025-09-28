@@ -1,10 +1,11 @@
 // pages/Pest.tsx
 import { useState, useEffect } from "react";
+import axios from "axios";
 import Navbar from "../components/Navbar";
 import PestModal from "../components/PestModal";
 import { LayoutGrid, List } from "lucide-react";
-import API_BASE_URL from "../config";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 interface Pest {
   idPest: number;
   pestName: string;
@@ -32,11 +33,10 @@ export default function Pest() {
   useEffect(() => {
     const fetchPests = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/pests`);
-        const data = await res.json();
-        setPests(data);
+        const res = await axios.get(`${API_BASE_URL}/pests`);
+        setPests(res.data);
       } catch (err) {
-        console.error("❌ Failed to fetch pests:", err);
+        console.error("Failed to fetch pests:", err);
       } finally {
         setLoading(false);
       }
@@ -113,7 +113,7 @@ export default function Pest() {
               >
                 {pest.pestImg && (
                   <img
-                    src={`${API_BASE_URL}${pest.pestImg}`}
+                    src={API_BASE_URL+pest.pestImg}
                     alt={pest.pestName}
                     className="w-full h-48 object-cover rounded-lg mb-4"
                   />
@@ -140,23 +140,20 @@ export default function Pest() {
       </div>
 
       {/* Modal */}
-     {selectedPest && (
-  <>
-    <PestModal
-      pest={{
-        ...selectedPest,
-        pestImg: selectedPest.pestImg
-          ? `${API_BASE_URL}${selectedPest.pestImg}`
-          : "",
-        lifeCycleImg: selectedPest.lifeCycleImg
-          ? `${API_BASE_URL}${selectedPest.lifeCycleImg}`
-          : "",
-      }}
-      onClose={() => setSelectedPest(null)}
-    />
-  </>
-)}
-
+      {selectedPest && (
+        <PestModal
+          pest={{
+            ...selectedPest,
+            pestImg: selectedPest.pestImg
+              ? `${selectedPest.pestImg}`
+              : "",
+            lifeCycleImg: selectedPest.lifeCycleImg
+              ? `${selectedPest.lifeCycleImg}`
+              : "",
+          }}
+          onClose={() => setSelectedPest(null)}
+        />
+      )}
     </>
   );
 }
