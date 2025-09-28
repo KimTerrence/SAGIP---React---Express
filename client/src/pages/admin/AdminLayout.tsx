@@ -15,6 +15,7 @@ export default function AdminLayout() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [view, setView] = useState<"card" | "list">("card");
+  const [pests, setPests] = useState<any[]>([]); 
 
 
 
@@ -23,6 +24,8 @@ export default function AdminLayout() {
     alert("do you want to logout?");
     localStorage.removeItem("authToken");
     navigate("/");
+
+    
   };
 
   return (
@@ -94,14 +97,16 @@ export default function AdminLayout() {
   {/* Dynamic Header Content */}
   <div className="flex-1 flex items-center justify-between gap-4">
     {location.pathname === "/admin/pest" ? (
-      <PestHeader
-        search={search}
-        setSearch={setSearch}
-        filter={filter}
-        setFilter={setFilter}
-        view={view}
-        setView={setView}
-    />
+     <PestHeader
+  search={search}
+  setSearch={setSearch}
+  filter={filter}
+  setFilter={setFilter}
+  view={view}
+  setView={setView}
+  pests={pests}   // 👈 added
+/>
+
     ) : (
       <h1 className="text-lg font-semibold text-gray-800">
         {location.pathname === "/admin"
@@ -123,7 +128,7 @@ export default function AdminLayout() {
 
         {/* Page content */}
         <main className={`flex-1 p-6 transition-all duration-300 ${sidebarMin ? "lg:ml-20" : "lg:ml-64"}`}>
-         <Outlet context={{ search, filter, view }} />
+        <Outlet context={{ search, filter, view, pests, setPests, setFilter, setSearch, setView }} />
         </main>
       </div>
     </div>

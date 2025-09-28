@@ -1,4 +1,9 @@
 import { LayoutGrid, List } from "lucide-react";
+import { useEffect, useState } from "react";
+
+interface Pest {
+  host: string;
+}
 
 interface PestHeaderControlsProps {
   search: string;
@@ -7,6 +12,7 @@ interface PestHeaderControlsProps {
   setFilter: (value: string) => void;
   view: "card" | "list";
   setView: (value: "card" | "list") => void;
+  pests: Pest[]; // 👈 pass pests from parent
 }
 
 export default function PestHeader({
@@ -16,8 +22,16 @@ export default function PestHeader({
   setFilter,
   view,
   setView,
+  pests,
 }: PestHeaderControlsProps) {
-  const options = ["All", "Corn", "Palay"];
+  const [options, setOptions] = useState<string[]>(["All"]);
+
+  useEffect(() => {
+    if (pests.length > 0) {
+      const uniqueHosts = Array.from(new Set(pests.map((p) => p.host))).sort();
+      setOptions(["All", ...uniqueHosts]); // 👈 dynamic options
+    }
+  }, [pests]);
 
   // toggle function
   const toggleView = () => {
@@ -37,8 +51,7 @@ export default function PestHeader({
           className="flex-1 w-10 sm:w-64 p-2 border rounded-lg shadow-sm"
         />
 
-        {/* Filter (mobile dropdown, desktop buttons) */}
-        {/* Mobile dropdown */}
+        {/* Filter (mobile dropdown) */}
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -51,7 +64,7 @@ export default function PestHeader({
           ))}
         </select>
 
-        {/* Desktop buttons */}
+        {/* Filter (desktop buttons) */}
         <div className="hidden md:flex gap-2">
           {options.map((opt) => (
             <button
@@ -76,7 +89,6 @@ export default function PestHeader({
         title={view === "card" ? "Switch to List View" : "Switch to Card View"}
       >
         {view === "card" ? <List size={18} /> : <LayoutGrid size={18} />}
-        
       </button>
     </div>
   );

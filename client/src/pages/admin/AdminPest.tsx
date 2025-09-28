@@ -6,7 +6,18 @@ import { useOutletContext } from "react-router-dom";
 import AddPestModal from "../../components/AddPestModal";
 import API_BASE_URL from "../../config";
 
-type ContextType = { search: string; filter: string; view: "card" | "list" };
+type ContextType = {
+  search: string;
+  setSearch: (v: string) => void;
+  filter: string;
+  setFilter: (v: string) => void;
+  view: "card" | "list";
+  setView: (v: "card" | "list") => void;
+  pests: Pest[];
+  setPests: React.Dispatch<React.SetStateAction<Pest[]>>;
+};
+
+
 
 interface ControlMethods {
   Cultural: string[];
@@ -19,6 +30,7 @@ interface Pest {
   pestImg: string;
   pestName: string;
   tagalogName: string;
+  host: string;
   identifyingMarks: string;
   whereToFind: string;
   damage: string;
@@ -28,8 +40,9 @@ interface Pest {
 }
 
 export default function AdminPest() {
-  const { search, filter, view } = useOutletContext<ContextType>();
-  const [pests, setPests] = useState<Pest[]>([]);
+  const { search, filter, view, setFilter, setSearch, setView, pests, setPests } =
+    useOutletContext<ContextType>();
+
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -40,28 +53,31 @@ export default function AdminPest() {
 
   // Fetch pests with control methods
  const fetchPests = async () => {
-  try {
-    const res = await fetch(`${API_BASE_URL}/pests`);
-    const data: Pest[] = await res.json();
+    try {
+      const res = await fetch(`${API_BASE_URL}/pests`);
+      const data: Pest[] = await res.json();
+      setPests(data); // ✅ update context pests
+    } catch (err) {
+      console.error("Error fetching pests:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // No need to fetch control methods separately
-    setPests(data);
-  } catch (err) {
-    console.error("Error fetching pests:", err);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  useEffect(() => {
-    fetchPests();
+ useEffect(() => {
+    if (pests.length === 0) {   // only fetch if empty
+      fetchPests();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
-  const filteredPests = pests.filter((pest) => {
-    const matchesSearch = pest.pestName.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "All" || pest.whereToFind === filter;
-    return matchesSearch && matchesFilter;
-  });
+const filteredPests = pests.filter((pest) => {
+  const matchesSearch = pest.pestName.toLowerCase().includes(search.toLowerCase());
+  const matchesFilter = filter === "All" || pest.host === filter;
+  return matchesSearch && matchesFilter;
+});
+
 
   if (loading) return <p>Loading pests...</p>;
 
@@ -71,37 +87,49 @@ export default function AdminPest() {
         <div className={view === "card" ? "grid grid-cols-1 md:grid-cols-3 gap-6" : ""}>
           {filteredPests.map((pest) => (
             <div
-              key={pest.idPest}
-              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative cursor-pointer"
-              onClick={() => setSelectedPest(pest)}
-            >
-              <img
-                src={`${API_BASE_URL}${pest.pestImg}`}
-                alt={pest.pestName}
-                className="w-full h-40 object-cover"
-              />
+  key={pest.idPest}
+  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative cursor-pointer"
+  onClick={() => setSelectedPest(pest)}
+>
+  {/* Image with name overlay */}
+  <div className="relative w-full h-40">
+    <img
+      src={`${API_BASE_URL}${pest.pestImg}`}
+      alt={pest.pestName}
+      className="w-full h-full object-cover"
+    />
+    {/* Gradient Overlay */}
+    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+    {/* Text Overlay */}
+    <div className="absolute bottom-2 left-2 text-white drop-shadow-md">
+      <h2 className="text-lg font-semibold">{pest.pestName}</h2>
+      <p className="text-sm italic">{pest.tagalogName}</p>
+    </div>
+  </div>
 
-              <div className="p-4">
-                <h2 className="text-lg font-semibold">{pest.pestName}</h2>
-                <p className="text-sm text-gray-500">{pest.tagalogName}</p>
-                <p className="mt-2 text-gray-600">
-                  {pest.identifyingMarks.length > 80
-                    ? pest.identifyingMarks.substring(0, 80) + "..."
-                    : pest.identifyingMarks}
-                </p>
-              </div>
+  {/* Card Body */}
+  <div className="p-4 ">
+    <p className="text-xs text-gray-700"><span className="bg-green-200 px-3 py-2 rounded-full">{pest.host}</span></p>
+    <p className="mt-2 text-gray-600">
+      {pest.identifyingMarks.length > 80
+        ? pest.identifyingMarks.substring(0, 80) + "..."
+        : pest.identifyingMarks}
+    </p>
+  </div>
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setForm(pest);
-                  setEditingPest(pest.idPest);
-                }}
-                className="absolute top-2 right-2 bg-green-600 text-white p-2 rounded-full shadow hover:bg-green-700"
-              >
-                <Pencil size={16} />
-              </button>
-            </div>
+  {/* Edit Button */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      setForm(pest);
+      setEditingPest(pest.idPest);
+    }}
+    className="absolute top-2 right-2 bg-green-600 text-white p-2 rounded-full shadow hover:bg-green-700"
+  >
+    <Pencil size={16} />
+  </button>
+</div>
+
           ))}
         </div>
       ) : (

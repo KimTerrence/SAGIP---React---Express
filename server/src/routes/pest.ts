@@ -35,7 +35,7 @@ const parseControlMethods = (input: any) => {
 router.get("/", async (req, res) => {
   try {
     const [pests] = await db.query(
-      `SELECT idPest, pestImg, pestName, tagalogName, identifyingMarks, whereToFind, damage, lifeCycle, lifeCycleImg FROM pest`
+      `SELECT * FROM pest`
     );
 
     const pestIds = (pests as any).map((p: any) => p.idPest);
