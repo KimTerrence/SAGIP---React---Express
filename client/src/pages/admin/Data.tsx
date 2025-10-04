@@ -1,185 +1,127 @@
-import { useState, useRef } from "react";
-import {
-  Grid,
-  List,
-  Download,
-  CheckSquare,
-  XSquare,
-  XCircle,
-} from "lucide-react";
+"use client";
 
-const images = [
-  { id: 1, filename: "forest.jpg", category: "Nature", url: "https://source.unsplash.com/400x300/?nature,forest" },
-  { id: 2, filename: "dog.jpg", category: "Animals", url: "https://source.unsplash.com/400x300/?dog" },
-  { id: 3, filename: "mountain.jpg", category: "Nature", url: "https://source.unsplash.com/400x300/?mountain" },
-  { id: 4, filename: "tech.jpg", category: "Tech", url: "https://source.unsplash.com/400x300/?technology" },
-  { id: 5, filename: "cat.jpg", category: "Animals", url: "https://source.unsplash.com/400x300/?cat" },
-  { id: 6, filename: "river.jpg", category: "Nature", url: "https://source.unsplash.com/400x300/?river" },
-  { id: 7, filename: "computer.jpg", category: "Tech", url: "https://source.unsplash.com/400x300/?computer" },
-  { id: 8, filename: "bird.jpg", category: "Animals", url: "https://source.unsplash.com/400x300/?bird" },
-];
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { LayoutGrid, List } from "lucide-react";
 
-export default function Data() {
-  const [filter, setFilter] = useState("All");
-  const [view, setView] = useState<"grid" | "list">("grid");
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selected, setSelected] = useState<number[]>([]);
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const filteredImages =
-    filter === "All" ? images : images.filter((img) => img.category === filter);
+interface Detection {
+  id: number;
+  pestName: string;
+  imagePath: string;
+  dateDetected: string;
+  email: string;
+  userId: number;
+  host?: string;
+}
 
-  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+export default function DetectionGallery() {
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState<"card" | "list">("card");
+  const [detections, setDetections] = useState<Detection[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleMouseDown = (id: number) => {
-    pressTimer.current = setTimeout(() => {
-      setSelectionMode(true);
-      toggleSelect(id);
-    }, 500);
-  };
+ useEffect(() => {
+    axios.get(`${API_BASE_URL}/detections`)
+      .then(res => {
+        const cleanedData = res.data.map((d: Detection) => ({
+          ...d,
+          // Replace dashes with spaces and capitalize first letters
+          pestName: d.pestName
+            .replace(/-/g, " ")
+            .replace(/\b\w/g, char => char.toUpperCase())
+        }));
+        setDetections(cleanedData);
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const handleMouseUp = () => {
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-  };
-
-  const toggleSelect = (id: number) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
-
-  const selectAll = () => setSelected(filteredImages.map((img) => img.id));
-  const unselectAll = () => setSelected([]);
-
-  const cancelSelection = () => {
-    setSelectionMode(false);
-    setSelected([]);
-  };
-
-  const downloadSelected = () => {
-    const files = images
-      .filter((img) => selected.includes(img.id))
-      .map((img) => img.filename);
-    alert(`Downloading files: \n${files.join(", ")}`);
-  };
+  const filteredDetections = detections.filter(d =>
+    d.pestName.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="p-6">
-      {/* Header Controls */}
-      <div className="flex flex-wrap gap-3 mb-6 items-center">
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="border px-3 py-2 rounded-lg"
-        >
-          <option value="All">All</option>
-          <option value="Nature">Nature</option>
-          <option value="Animals">Animals</option>
-          <option value="Tech">Tech</option>
-        </select>
+    <div className="p-6 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <input
+          type="text"
+          placeholder="Search detections..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3 py-2 border rounded-lg w-full md:w-1/3"
+        />
 
         <button
-          onClick={() => setView("grid")}
-          className={`p-2 rounded ${view === "grid" ? "bg-gray-200" : ""}`}
+          onClick={() => setView("card")}
+          className={`p-2 rounded-lg border ${view === "card" ? "bg-gray-200" : ""}`}
         >
-          <Grid size={20} />
+          <LayoutGrid size={18} />
         </button>
         <button
           onClick={() => setView("list")}
-          className={`p-2 rounded ${view === "list" ? "bg-gray-200" : ""}`}
+          className={`p-2 rounded-lg border ${view === "list" ? "bg-gray-200" : ""}`}
         >
-          <List size={20} />
+          <List size={18} />
         </button>
-
-        {selectionMode && (
-          <>
-            <button
-              onClick={selectAll}
-              className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg"
-            >
-              <CheckSquare size={18} /> Select All
-            </button>
-            <button
-              onClick={unselectAll}
-              className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg"
-            >
-              <XSquare size={18} /> Unselect All
-            </button>
-            <button
-              onClick={cancelSelection}
-              className="flex items-center gap-1 px-3 py-2 bg-gray-500 text-white rounded-lg"
-            >
-              <XCircle size={18} /> Cancel
-            </button>
-          </>
-        )}
-
-        {selected.length > 0 && (
-          <button
-            onClick={downloadSelected}
-            className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white rounded-lg"
-          >
-            <Download size={18} /> Download ({selected.length})
-          </button>
-        )}
       </div>
 
-      {/* Image List */}
-      <div
-        className={
-          view === "grid"
-            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-            : "flex flex-col gap-3"
-        }
-      >
-        {filteredImages.map((img) =>
-          view === "grid" ? (
-            // ✅ Grid Card
+      {/* Card View */}
+      {loading ? (
+        <p className="text-center text-gray-500">Loading detections...</p>
+      ) : filteredDetections.length === 0 ? (
+        <p className="text-center text-gray-500">No detections found.</p>
+      ) : view === "card" ? (
+        <div className="grid md:grid-cols-3 gap-4">
+          {filteredDetections.map(d => (
             <div
-              key={img.id}
-              className={`relative border rounded-lg overflow-hidden cursor-pointer group transition-all duration-300 ${
-                selected.includes(img.id) ? "ring-4 ring-blue-500" : ""
-              }`}
-              onClick={() => selectionMode && toggleSelect(img.id)}
-              onMouseDown={() => handleMouseDown(img.id)}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
+              key={d.id}
+              className="p-4 bg-white rounded-xl shadow hover:shadow-lg cursor-pointer transition"
             >
               <img
-                src={img.url}
-                alt={img.filename}
-                className="w-full h-40 object-cover transform group-hover:scale-105 transition duration-300"
-                draggable={false}
+                src={API_BASE_URL + d.imagePath}
+                alt={d.pestName}
+                className="w-full h-48 object-cover rounded-lg mb-2"
               />
-              <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-50 text-white text-sm px-2 py-1 truncate">
-                {img.filename}
-              </div>
+              <h3 className="text-center font-semibold">{d.pestName}</h3>
             </div>
-          ) : (
-            // ✅ List Row
-            <div
-              key={img.id}
-              className={`flex items-center gap-4 border rounded-lg p-2 cursor-pointer transition ${
-                selected.includes(img.id) ? "ring-4 ring-blue-500" : ""
-              }`}
-              onClick={() => selectionMode && toggleSelect(img.id)}
-              onMouseDown={() => handleMouseDown(img.id)}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-            >
-              <img
-                src={img.url}
-                alt={img.filename}
-                className="w-20 h-20 object-cover rounded-md"
-                draggable={false}
-              />
-              <span className="text-sm font-medium truncate">{img.filename}</span>
-            </div>
-          )
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        // List View - Table Style
+        <div className="overflow-x-auto bg-white rounded-xl shadow">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Image</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Pest Name</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">User</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Host</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Date Detected</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredDetections.map(d => (
+                <tr key={d.id} className="hover:bg-gray-50 cursor-pointer">
+                  <td className="px-4 py-2">
+                    <img
+                      src={API_BASE_URL + d.imagePath}
+                      alt={d.pestName}
+                      className="w-20 h-20 object-cover rounded-md"
+                    />
+                  </td>
+                  <td className="px-4 py-2">{d.pestName}</td>
+                  <td className="px-4 py-2">{d.email}</td>
+                  <td className="px-4 py-2">{d.host ?? "-"}</td>
+                  <td className="px-4 py-2">{new Date(d.dateDetected).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
