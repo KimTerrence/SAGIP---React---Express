@@ -113,7 +113,7 @@ export default function AdminLayout() {
           : location.pathname === "/admin/data"
           ? "Datasets"
           : location.pathname === "/admin/users"
-          ? "User Management"
+          ? "Users"
           : location.pathname === "/admin/settings"
           ? "Settings"
           : "Admin Panel"}
