@@ -3,6 +3,7 @@ import cors from "cors";
 import userRoutes from "./routes/user";
 import authRoutes from "./routes/auth";
 import pestRoutes from "./routes/pest";
+import detectionRoutes from "./routes/detection";
 import { initDB } from "./db";
 import path from "path"
 
@@ -13,6 +14,8 @@ app.use(express.json());
 // Serve static uploads folder
 app.use("/uploads/pests", express.static(path.join(__dirname, "uploads/pests")));
 app.use("/uploads/lifecycle", express.static(path.join(__dirname, "uploads/lifecycle")));
+app.use("/uploads/detections", express.static(path.join(__dirname, "uploads/detections")));
+
 
 
 //Root route
@@ -28,6 +31,9 @@ app.use("/auth", authRoutes);
 
 //Pest Routes
 app.use("/pests", pestRoutes);
+
+app.use("/detections", detectionRoutes);
+
 
 const PORT = 5000;
 initDB().then(() => {
